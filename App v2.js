@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import StarRating from "./starrating";
-import { useMovies } from "./useMovies";
-import { useLocalStorage } from "./useLocalStorage";
 
 // this include tempdata of movies
+
+//learning diifing rules,key props rules, useeffect
+//behind rendering process component-instance-dom-reactelement-browser
+//render1updatedelete->render2commit->state update batching->browser paint
 
 const tempMovieData = [
   {
@@ -30,9 +32,6 @@ const tempMovieData = [
 ];
 
 // this include tempwatched data of movies
-
-//learning custom hooks to reuse the logic
-//component composition to reuse the UI
 
 const tempWatchedData = [
   {
@@ -66,26 +65,15 @@ export default function App() {
   // this will Search the movie
   const [query, setQuery] = useState("");
   //this will display list of movie at inital pass tempmoviedata array of object
-  // const [movies, setMovies] = useState(tempMovieData);
+  const [movies, setMovies] = useState(tempMovieData);
   //this will display list of movie watched
-  // const [watched, setWatched] = useState([]);
+  const [watched, setWatched] = useState([]);
   //this will be used when we need to Loading while fetching is not done through API
-  // const [isLoading, setLoading] = useState(false);
+  const [isLoading, setLoading] = useState(false);
   //this will be used to display error while fetching the movie
-  // const [error, setError] = useState("");
+  const [error, setError] = useState("");
   //used for diplay more about the movie list so need to fetch api again for onclickmovied id
   const [selectedId, setSelectedId] = useState("");
-
-  //custom hook
-  const [movies, isLoading, error] = useMovies(query);
-  const [watched, setWatched] = useLocalStorage([], "watched");
-
-  //local storage
-
-  // const [watched, setWatched] = useState(function () {
-  //   const setstorage = localStorage.getItem("watched");
-  //   return JSON.parse(setstorage);
-  // });
 
   //this is for test purpose can enter movie name
   const tempQuery = "";
@@ -113,12 +101,63 @@ export default function App() {
     setWatched((watched) => watched.filter((movie) => movie.imdbID !== id));
   }
 
-  // useEffect(
-  //   function () {
-  //     localStorage.setItem("watched", JSON.stringify(watched));
-  //   },
-  //   [watched]
-  // );
+  // the below useEffect will render on dependeceny on query
+  useEffect(
+    function () {
+      const controller = new AbortController();
+      async function fetchmovies() {
+        try {
+          setLoading(true);
+          setError("");
+          // before getting the data to make Loader visible making Loader visible
+          //key will be get by registering on omdb api and query is nothing but movie name
+          const res = await fetch(
+            `http://www.omdbapi.com/?apikey=${key}&s=${query}`,
+            { signal: controller.signal }
+          );
+
+          // if the response is not ok while fetching the api will throw the error to catch so that would get display
+          if (!res.ok) throw new Error("Something went wrong fethcing movies");
+
+          // parse the data recived from json
+          const data = await res.json();
+
+          // if for the wrong movie name will get false response then send as movie not found to the throw
+          if (data.Response === "False") throw new Error("Movie Not Found");
+
+          // this will array of object data api is send to setmovie will append the data to the movies list and which will get displayed
+          setMovies(data.Search);
+          setError("");
+
+          // once fetch compledted set loader back to false again
+          setLoading(false);
+        } catch (err) {
+          // set the err and accordingly the message
+          if (err.name !== "AbortError") {
+            setError(err.message);
+          }
+        } finally {
+          // once error occur  set loader back to false again
+          setLoading(false);
+        }
+      }
+      // if the movie name less than three character then set to default and return else if greater then fetch the data
+      if (query.length < 3) {
+        setMovies(tempMovieData);
+        setError("");
+        return;
+      }
+      //  calling the useEffect function
+      fetchmovies();
+      // this will close the earlier movie showing in watch movie box
+      handleclosemovie();
+
+      return function () {
+        controller.abort();
+      };
+    },
+    [query]
+  );
 
   return (
     <>
@@ -285,9 +324,11 @@ function MovieDetails({ selectedId, onclosemovie, onhandlewatch, watched }) {
   const [isLoading, setLoading] = useState(false);
   //can able to help display rating
   const [userrating, setuserrating] = useState("");
+  console.log(watched);
 
   // if their is already movie in the watched list then watched setr to faklse else to true
   const iswatched = watched.map((movie) => movie.imdbID).includes(selectedId);
+  console.log(iswatched);
 
   const watcheduserrating = watched.find(
     (movie) => movie.imdbID === selectedId
