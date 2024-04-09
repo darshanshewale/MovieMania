@@ -1,5 +1,7 @@
 ## Moviesupermania 🍿🍿🍿🎬
 
+## URL: [moviesupermania.netlify.app](https://moviesupermania.netlify.app/)
+
 ## Description 🎥
 Moviesupermania is a React application that allows users to search for movies, view movie details, rate movies, add them to a watchlist, and calculate total time watched and average ratings.
 
