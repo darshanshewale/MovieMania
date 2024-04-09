@@ -19,6 +19,7 @@ Moviesupermania is a React application that allows users to search for movies, v
 HTML: Used for structuring the web pages.
 CSS: Applied for styling and layout.
 ReactJs : Enhance interactivity.
+API:https://www.omdbapi.com/
 
 ## Installation 🖥️
 Clone this repository to your local machine.
